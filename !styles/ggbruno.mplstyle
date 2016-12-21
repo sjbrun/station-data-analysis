@@ -1,0 +1,44 @@
+# from http://www.huyng.com/posts/sane-color-scheme-for-matplotlib/
+
+patch.linewidth: 0.5
+patch.facecolor: 348ABD  # blue
+patch.edgecolor: EEEEEE
+patch.antialiased: True
+
+font.size: 10.0
+
+axes.facecolor: E5E5E5
+axes.edgecolor: white
+axes.linewidth: 1
+axes.grid: True
+axes.titlesize: x-large
+axes.labelsize: large
+axes.labelcolor: 555555
+axes.axisbelow: True       # grid/ticks are below elements (e.g., lines, text)
+
+axes.prop_cycle: cycler('color', ['E24A33', '348ABD', '8EBA42', '777777', '988ED5',   'FFB5B8', 'FFFF00', '00FFFF', 'FBC15E', '808080', '004D00', '333399'])
+                   # E24A33 : red
+                   # 348ABD : blue
+                   # 8EBA42 : green
+                   # 777777 : gray
+                   # 988ED5 : purple
+                   # FFB5B8 : pink
+                   # FFFF00 : yellow
+                   # 00FFFF : sky blue
+                   # FBC15E : light orange
+                   # 808080 : dark gray
+                   # 004D00 : dark green
+                   # 333399 : dark blue
+
+xtick.color: 555555
+xtick.direction: out
+
+ytick.color: 555555
+ytick.direction: out
+
+grid.color: white
+grid.linestyle: -    # solid line
+
+figure.facecolor: white
+figure.edgecolor: 0.50
+##figure.tightlayout
