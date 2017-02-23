@@ -30,8 +30,9 @@ def write_single_stats(filenames, wb, ws, row_start, test_title, df, mask, limit
     header = '==============================================='
     print('\n')
     bnums = get_bnums(df)  ## get boards present in mask dframe
+    on_off_dict = dict(zip(bnums, mask))
     b_start = int(bnums[0][-1])  ## find lowest test station board number
-    boards = [('B'+str(index+b_start)) for index, on_off_state in enumerate(mask) if on_off_state == '1']  ## only ON boards
+    boards = [board for board in bnums if on_off_dict[board]=='1']  ## only ON boards
     board = boards[0]
     systems = [df.columns[i] for i in range(len(df.columns)) if re.search(REGEX_BNUMS(board), df.columns[i])]
     vsenses = [df.columns[i] for i in range(len(df.columns)) if re.search(REGEX_VSENSE(board), df.columns[i])]
@@ -214,7 +215,8 @@ def write_multi_stats(filenames, wb, ws, row_start, test_title, data_dict, mask,
     df = data_dict[mask]  ## get appropriate dataframe (correct mode)
     bnums = get_bnums(df)  ## get boards present in mask dframe
     b_start = int(bnums[0][-1])  ## find lowest test station board number
-    boards = [('B'+str(index+b_start)) for index, on_off_state in enumerate(mask) if on_off_state == '1']  ## only ON boards
+    on_off_dict = dict(zip(bnums, mask))  ## keys=>boards, values=>on/off
+    boards = [board for board in bnums if on_off_dict[board]=='1']  ## only ON boards
     boards_wo6 = [board for board in boards if (board != 'B6')]  ## on_boards that are not outage
     bmode = ''.join(str(b) for b in sorted(boards) if b != 'B6')  ## string board combo
     print('BOARD MODE:', bmode, '  TEMPERATURE:', str(temp)+'C')
@@ -385,18 +387,18 @@ def do_analysis(filename, folder, b_nums, limits, stats, plots, hists, *temps):
     boards = sorted(['B'+num for num in b_nums])
     mdf, test_title = build_select_df(folder, *boards)
     df_dict = make_modes(mdf)
-    outage = False
 
     ## make txt file with all boards
     mdf.to_csv(output_path + 'raw_data_all_boards.txt', header=mdf.columns, index=True, sep='\t', mode='a')
 
     ## user-selected analysis
+    outage = False
     if 'B6' in boards:
         outage = True
     if stats: ## stats/tables and essential plotting
         wb = create_excel_file(filename + ' - tables')
         for temp in temps:
-            sheetname = str(temp) + "C"
+            sheetname = str(temp) + 'C'
             ws = create_new_sheet(wb, sheetname)
             write_full_module_stats(filenames, wb, ws, test_title, df_dict, limits, outage, temp)
             highlight_workbook(wb, ws)

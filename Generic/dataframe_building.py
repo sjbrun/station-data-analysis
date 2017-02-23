@@ -35,7 +35,6 @@ def build_dataframe(board, folder, rename=False):
     df = pd.DataFrame()
     for filename in os.listdir(folder):
         if bool(re.search(REGEX_BOARDFILE(board), filename)):
-            # import pdb; pdb.set_trace()
             # alter_file(folder+'\\'+filename)
             new_df = pd.read_csv(folder+'\\'+filename, parse_dates={'Date Time': [0,1]}, date_parser=parse,
                                  index_col='Date Time', sep='\t', skipfooter=1, engine='python',

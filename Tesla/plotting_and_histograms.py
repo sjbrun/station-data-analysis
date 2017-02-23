@@ -224,9 +224,9 @@ def make_hist(df, board, limits, temp, title, directory, pstyle='ggplot'):
     ## plot histograms
     fig = plt.figure()
     style.use(pstyle)
-    plot_title = str(real_line) + ' only '+ str(temp)+'C'
+    plot_title = str(real_line) + ' ' + str(temp) + u'\N{DEGREE SIGN}' + 'C'
     fig.suptitle(title + ': ' + plot_title, fontsize = 14, fontweight='bold')
-    plt.figtext(0.5, .935, 'Note: black line is sample mean, red dashed lines are lower/upper current limits, and blue dotted lines are \u00b110\u0025 of the mean', style='italic', fontsize=6, ha = 'center', va = 'top')
+    plt.figtext(0.5, .935, 'Note: black line is sample mean, red dashed lines are lower/upper current limits, and blue dotted lines are \u00b110\u0025 of the mean', style='italic', fontsize=8, ha = 'center', va = 'top')
     nrows, ncols = len(voltages), 1
     i = 1
 
@@ -247,12 +247,10 @@ def make_hist(df, board, limits, temp, title, directory, pstyle='ggplot'):
         ax.set_ylabel('Frequency', fontsize = 8)
         plt.setp(ax.get_xticklabels(), fontsize=8)
         plt.setp(ax.get_yticklabels(), fontsize=8)
-        # ax.set_title( str(real_line) + ' (' + str(board) +') only '+str(temp)+'C at '+str(v)+'V   Avg: '+str(round(avg,3))+'   -10%: '+str(minus_ten)+'   +%10: '+str(plus_ten))
-        # ax.set_title( str(real_line) + ' (' + str(board) +') only '+str(temp)+'C at '+str(v)+'V   Avg: '+str(round(avg,3))+'   LowerLimit: '+str(LL)+'   UpperLimit: '+str(UL) +'   -10%: '+str(minus_ten)+'   +%10: '+str(plus_ten))
         ax.set_title( str(v)+'V   Avg: '+str(round(avg,3))+'   LowerLimit: '+str(LL)+'   UpperLimit: '+str(UL)+ '   -10%: '+str(minus_ten)+'   +%10: '+str(plus_ten), fontsize = 9)
         i += 1
     plt.tight_layout()
-    plt.subplots_adjust(top=0.87, bottom=0.05, left=0.07, right=0.97)
+    plt.subplots_adjust(top=0.87, bottom=0.08, left=0.07, right=0.97)
     plt.savefig(directory + 'Hist ' + title + ' ' + plot_title + '.png', dpi = 400)
     # plt.savefig(directory + 'Hist ' + title + ' ' + plot_title + '.png', dpi = 400, bbox_inches='tight')
 

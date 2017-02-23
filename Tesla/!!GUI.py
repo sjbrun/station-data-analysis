@@ -48,44 +48,44 @@ class DataAnalysis(Frame):
 								font=option_font)
 		self.limits_textbox = Entry(text='')
 		self.limits_button.bind('<Button-1>', self.set_limits)
-		self.limits_button.grid(row=1, column=0, columnspan=1, sticky=W+E+N+S, 
+		self.limits_button.grid(row=1, column=0, columnspan=1, sticky=W+E+N+S,
 								padx=10, pady=10)
 		self.limits_textbox.grid(row=1, column=1, columnspan=6, sticky=W+E+N+S,
 								padx=10, pady=10)
 
 		### CHECKBOXES TEMPS -- select temperatures
-		Label(text="Temps:", font=label_font, bg=bg_color).grid(row=2, column=0, 
+		Label(text="Temps:", font=label_font, bg=bg_color).grid(row=2, column=0,
 			 sticky=E+N+S, pady=10)
-		self.tmp1, self.tmp2, self.tmp3, self.tmp4, self.tmp5, self.tmp6 = -40, 23, 45, 50, 60, 85
+		self.tmp1, self.tmp2, self.tmp3, self.tmp4, self.tmp5, self.tmp6 = -40, 23, 50, 60, 85, 95
 		self.tmp1_onoff = IntVar()
-		self.tchk1 = Checkbutton(master, text="-40C", variable=self.tmp1_onoff, 
-					 font=option_font, bg=bg_button, indicatoron=0, 
+		self.tchk1 = Checkbutton(master, text="-40C", variable=self.tmp1_onoff,
+					 font=option_font, bg=bg_button, indicatoron=0,
 					 borderwidth=2, selectcolor="yellow")
 		self.tmp2_onoff = IntVar()
-		self.tchk2 = Checkbutton(master, text="23C", variable=self.tmp2_onoff, 
-					 font=option_font, bg=bg_button, indicatoron=0, 
+		self.tchk2 = Checkbutton(master, text="23C", variable=self.tmp2_onoff,
+					 font=option_font, bg=bg_button, indicatoron=0,
 					 borderwidth=2, selectcolor="yellow")
 		self.tmp3_onoff = IntVar()
-		self.tchk3 = Checkbutton(master, text="45C", variable=self.tmp3_onoff, 
-					 font=option_font, bg=bg_button, indicatoron=0, 
+		self.tchk3 = Checkbutton(master, text="50C", variable=self.tmp3_onoff,
+					 font=option_font, bg=bg_button, indicatoron=0,
 					 borderwidth=2, selectcolor="yellow")
 		self.tmp4_onoff = IntVar()
-		self.tchk4 = Checkbutton(master, text="50C", variable=self.tmp4_onoff, 
-					 font=option_font, bg=bg_button, indicatoron=0, 
+		self.tchk4 = Checkbutton(master, text="60C", variable=self.tmp4_onoff,
+					 font=option_font, bg=bg_button, indicatoron=0,
 					 borderwidth=2, selectcolor="yellow")
 		self.tmp5_onoff = IntVar()
-		self.tchk5 = Checkbutton(master, text="60C", variable=self.tmp5_onoff, 
-					 font=option_font, bg=bg_button, indicatoron=0, 
+		self.tchk5 = Checkbutton(master, text="85C", variable=self.tmp5_onoff,
+					 font=option_font, bg=bg_button, indicatoron=0,
 					 borderwidth=2, selectcolor="yellow")
 		self.tmp6_onoff = IntVar()
-		self.tchk6 = Checkbutton(master, text="85C", variable=self.tmp6_onoff, 
-					 font=option_font, bg=bg_button, indicatoron=0, 
+		self.tchk6 = Checkbutton(master, text="95C", variable=self.tmp6_onoff,
+					 font=option_font, bg=bg_button, indicatoron=0,
 					 borderwidth=2, selectcolor="yellow")
 		tmp_i = 1  ## start at 2nd column
 		for chk in [self.tchk1, self.tchk2, self.tchk3, self.tchk4, self.tchk5, self.tchk6]:
 			chk.grid(row=2, column=tmp_i, sticky=W+E+N+S, pady=10)
 			tmp_i += 1
-		self.temp_pairs = [(self.tmp1_onoff, self.tmp1), (self.tmp2_onoff, self.tmp2), 
+		self.temp_pairs = [(self.tmp1_onoff, self.tmp1), (self.tmp2_onoff, self.tmp2),
 					  (self.tmp3_onoff, self.tmp3), (self.tmp4_onoff, self.tmp4),
 					  (self.tmp5_onoff, self.tmp5), (self.tmp6_onoff, self.tmp6)]
 		self.temps = []
@@ -126,17 +126,17 @@ class DataAnalysis(Frame):
 		self.rad1 = Checkbutton(master, text="Tables/Stats", variable=self.stats, font=option_font,
 					bg=bg_button, indicatoron=0, borderwidth=2, selectcolor="yellow")
 		self.plots = IntVar()
-		self.rad2 = Checkbutton(master, text="Plots", variable=self.plots, font=option_font, 
+		self.rad2 = Checkbutton(master, text="Plots", variable=self.plots, font=option_font,
 					bg=bg_button, indicatoron=0, borderwidth=2, selectcolor="yellow")
 		self.hists = IntVar()
-		self.rad3 = Checkbutton(master, text="Histograms", variable=self.hists, font=option_font, 
+		self.rad3 = Checkbutton(master, text="Histograms", variable=self.hists, font=option_font,
 					bg=bg_button, indicatoron=0, borderwidth=2, selectcolor="yellow")
 		rad_i = 1  ## start at 2nd column
 		for rad in [self.rad1, self.rad2, self.rad3]:
 			rad.grid(row=4, column=rad_i, sticky=W+E+N+S, pady=10)
 			rad_i += 1
 
-		### ENTRY ANALYSIS CSV -- textfield entry for name of csv analysis file 
+		### ENTRY ANALYSIS CSV -- textfield entry for name of csv analysis file
 		self.analysis_filename = StringVar()
 		Label(text="Analysis Filename:", font=label_font, bg=bg_color).grid(row=5,
 			 column=0, sticky=E+N+S, pady=10)
@@ -144,7 +144,7 @@ class DataAnalysis(Frame):
 			 sticky=W+E+N+S, padx=10, pady=10)
 
 		### BUTTON ANALYZE -- analyze data based on user entered parameters
-		self.analyze_button = Button(master, text="Analyze", command=self.analyze, 
+		self.analyze_button = Button(master, text="Analyze", command=self.analyze,
 							font=big_btn_font, bg="green", fg="white")
 		self.analyze_button.grid(row=6, column=3, columnspan=1, sticky=W+E+N+S,
 								padx=10, pady=10)
@@ -198,7 +198,7 @@ class DataAnalysis(Frame):
 		wb = self.limits_file.get()
 		ws = "Sheet1"
 		limits = Limits(wb, ws)
-		do_analysis(self.analysis_filename.get(), self.folderpath.get(), self.on_boards.get(), 
+		do_analysis(self.analysis_filename.get(), self.folderpath.get(), self.on_boards.get(),
 					limits, self.stats.get(), self.plots.get(), self.hists.get(), *self.temps)
 
 root = Tk()

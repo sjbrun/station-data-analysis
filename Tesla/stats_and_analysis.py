@@ -98,8 +98,8 @@ def current_stats(filenames, wb, ws, row_start, test_title, df, board, limits, t
         ### WRITE CURRENT TABLES INTO EXCEL FILE
         table_data.append(tbl_chk)
         row_start = excel_write_tbl_data(row_start, wb, ws, product, test_title, limits.boards_dict[board], str(temp), voltage, LL, UL, table_data)
-
     return row_start
+
 
 def outage_stats(filenames, wb, ws, row_start, test_title, df, board, limits, temp):
     ''' Tesla M3 outage should always be 13.5 (no matter the on/off state or voltage sp). Only off when hard failure. '''
@@ -111,7 +111,6 @@ def outage_stats(filenames, wb, ws, row_start, test_title, df, board, limits, te
     temp_header = 'Amb Temp TC1 ' + board
     dframe = df.loc[ (df[temp_header] > (temp-tolerance)) &
                        (df[temp_header] < (temp+tolerance)) ]
-
     ### set outage data
     outage_systems = [dframe.columns[i] for i in range(len(dframe.columns)) if re.search(REGEX_BNUMS('B6'), dframe.columns[i])]
     print(outage_systems)
@@ -162,13 +161,13 @@ def write_full_module_stats(filenames, wb, ws, test_title, df, limits, temp):
     row_start = 0  ## where to start writing in excel tables file
     boards = get_bnums(df)  ## get boards present in mask dframe
     for board in boards:
+        board_on_off = 'Board on/off ' + board
         if board == 'B6':  ## if board is outage
-            board_on_off = 'Board on/off ' + board
-            board_df = df.loc[(df[board_on_off] != -1)]  ## set dataframe to only when FC is ON
+            # board_df = df.loc[(df[board_on_off] != -1)]  ## set dataframe to only when FC is ON
+            board_df = df
             row = outage_stats(filenames, wb, ws, row_start, test_title, board_df, board, limits, temp)
             row_start = row + 4 ## buffer for different tables
         else:
-            board_on_off = 'Board on/off ' + board
             board_df = df.loc[(df[board_on_off] == 1)]  ## set dataframe to only when board is ON
             row = current_stats(filenames, wb, ws, row_start, test_title, board_df, board, limits, temp)
             row_start = row + 4  ## buffer for different tables
@@ -177,7 +176,7 @@ def write_full_module_stats(filenames, wb, ws, test_title, df, limits, temp):
 ###### MAIN ANALYSIS FUNCTION -- CREATES TABLES, STATS, PLOTS, HISTOGRAMS ######
 def do_analysis(filename, folder, b_nums, limits, stats, plots, hists, *temps):
     ''' Do user input analysis: stats/tbls, plotting, histograms possible
-        (e.g. - type in 135 to see boards 1, 3, and 5 '''
+        (e.g. - type in 135 to see boards 1, 3, and 5) '''
     output_path = '!output//'
     filenames = [output_path + str(filename)+'-analysis.csv',
                  output_path + str(filename)+'-outofspec.csv', filename] ## leave filename last if altered!!!

@@ -18,62 +18,6 @@ from matplotlib import style
 ###### PLOTTING FUNCTIONS ######
 ################################
 
-# def make_plot(df):
-#     style.use('ggplot')
-#     temps = [df.columns[i] for i in range(len(df.columns)) if ('TC' in df.columns[i])]
-#     currents = [df.columns[i] for i in range(len(df.columns)) if re.search(REGEX_SYSTEMS, df.columns[i])]
-#     fig, axes = plt.subplots(nrows=2, ncols=1, sharex=True)
-#     df[currents].plot(ax=axes[0])
-#     df[temps].plot(ax=axes[1])
-#     for i in range(len(axes)):
-#         axes[i].legend(loc='center left', bbox_to_anchor=(1.0, 0.5))
-#     plt.show('hold')
-#
-# def make_plots(*dfs):
-#     print('Plotting...')
-#     boards = []
-#     for df in dfs:
-#         boards.append(get_bnum(df))
-#     style.use('ggplot')
-#     vsetpoint = dfs[0]['VSetpoint '+boards[0]]
-#     temps = [dfs[0].columns[i] for i in range(len(dfs[0].columns)) if ('TC' in dfs[0].columns[i])]
-#
-#     fig, axes = plt.subplots(nrows=len(dfs)+2, ncols=1, sharex=True)
-#     vsetpoint.plot(ax=axes[0])
-#     dfs[0][temps].plot(ax=axes[1])
-#
-#     row = 2  ## start on row 2
-#     for df in dfs:
-#         currents = [df.columns[i] for i in range(len(df.columns)) if re.search(REGEX_SYSTEMS, df.columns[i])]
-#         df[currents].plot(ax=axes[row])
-#         row +=1
-#
-#     for i in range(len(boards)+2):
-#         if i < 2:
-#             leg_labels = axes[i].get_legend_handles_labels()[1]
-#             axes[i].legend(loc='center left', bbox_to_anchor=(1.0, 0.5),
-#                            labels = [x[:-3] for x in leg_labels])
-#         elif i == 2:
-#             vert = {1:0.5, 2:-0.25 , 3:-1.0 , 4:-1.75 , 5:-2.5 , 6:-3.25}
-#             leg_labels = axes[i].get_legend_handles_labels()[1]
-#             axes[i].legend(loc='center left', bbox_to_anchor=(1.0, vert[len(boards)]),
-#                            labels = [x[:-3] for x in leg_labels])
-#         else:
-#             axes[i].legend_.remove()
-#
-#     for i in range(len(boards)):
-#         axes[i+2].set_title(boards[i])
-#         if boards[i] == 'B6':
-#             axes[i+2].set_ylabel("Voltage (V)")
-#         else:
-#             axes[i+2].set_ylabel("Current (A)")
-#     axes[0].set_ylabel("Voltage (V)")
-#     axes[0].set_ylim([0,20])
-#     axes[1].set_ylabel(u"Temperature (\N{DEGREE SIGN}C)")
-#
-#     print('...complete.')
-#     plt.show()
-
 
 def make_mplots(mdf, limits, title, pstyle = 'ggplot'):
     ''' This function assumes multi dataframe has board-named columns '''
@@ -107,7 +51,7 @@ def make_mplots(mdf, limits, title, pstyle = 'ggplot'):
 
     ### ---------------------------------------------------------------------- ###
     ## SUBPLOT 1: VOLTAGE AND FUNCTIONAL CYCLE
-    aux_colors = ['#00A0A6', '#FFA500', '#DA70D6', '#E5E500' ]  ### TO DO make color dict for plotting (as global var)
+    aux_colors = ['#00A0A6', '#FFA500', '#DA70D6', '#E5E500', '#FDFD96', '#B22222']  ### TO DO make color dict for plotting (as global var)
     board_colors = dict(zip(boards, aux_colors))
     for board in boards:
         if '6' in board:
@@ -200,7 +144,8 @@ def single_mode_hist(df, mask, limits, temp, title, directory, pstyle='ggplot'):
     # print('IN SINGLE MODE HIST FUNCTION')
     bnums = get_bnums(df)  ## get boards present in mask dframe
     b_start = int(bnums[0][-1])  ## retrieve lowest test station board number
-    boards = [('B'+str(index+b_start)) for index, on_off_state in enumerate(mask) if on_off_state == '1']  ## only ON boards
+    on_off_dict = dict(zip(bnums, mask))
+    boards = [board for board in bnums if on_off_dict[board]=='1']  ## only ON boards
     board = boards[0]
     systems = [df.columns[i] for i in range(len(df.columns)) if re.search(REGEX_BNUMS(board), df.columns[i])]
     if limits != None:
@@ -261,7 +206,8 @@ def multi_mode_hist(data_dict, mask, limits, temp, title, directory, pstyle='ggp
     df = data_dict[mask]  ## get appropriate dataframe
     bnums = get_bnums(df)  ## get boards present in mask dframe
     b_start = int(bnums[0][-1])  ## find lowest test station board number
-    boards = [('B'+str(index+b_start)) for index, on_off_state in enumerate(mask) if on_off_state == '1']  ## only ON boards
+    on_off_dict = dict(zip(bnums, mask))
+    boards = [board for board in bnums if on_off_dict[board]=='1']  ## only ON boards
     boards_wo6 = [board for board in boards if (board != 'B6')]  ## on_boards that are not outage
     bmode = ''.join(str(b) for b in sorted(boards) if b != 'B6')  ## string board combo
     systems_only = [df.columns[i][:-2] for i in range(len(df.columns)) if re.search(REGEX_BNUMS(boards[0]), df.columns[i])]
