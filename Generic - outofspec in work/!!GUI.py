@@ -207,9 +207,11 @@ class DataAnalysis(Frame):
         print("Boards:", self.on_boards.get())
         print("Analysis Filename:", self.analysis_filename.get())
         ## pull limits from limits file
+        print("Limits:\n")
         wb = self.limits_file.get()
         ws = "Sheet1"
         limits = Limits(wb, ws)
+        print('\n\n')
         do_analysis(self.analysis_filename.get(), self.folderpath.get(), self.on_boards.get(),
         limits, self.stats.get(), self.plots.get(), self.hists.get(), *self.temps)
 

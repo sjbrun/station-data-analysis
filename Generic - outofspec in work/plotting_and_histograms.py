@@ -22,7 +22,7 @@ from matplotlib import style
 def make_mplots(mdf, limits, title, pstyle = 'ggplot'):
     ''' This function assumes multi dataframe has board-named columns '''
 
-    print('Plotting...', end ='')
+    print('Plotting temporal plot...', end ='')
     boards = get_bnums(mdf)  ## get boards used in test
 
     ## if possible, retrieve module names for each test station board
@@ -30,7 +30,7 @@ def make_mplots(mdf, limits, title, pstyle = 'ggplot'):
         real_lines = [ limits.boards_dict[board] for board in boards ]
     else:
         real_lines = [ "" for board in boards ]
-    print("M_MPLOTS BOARDS:", boards)
+    print("BOARDS:", boards)
     vsetpoint = mdf['VSetpoint ' + boards[0]]
     temps = [mdf.columns[i] for i in range(len(mdf.columns)) if re.search(REGEX_TEMPS_BNUMS(boards[0]), mdf.columns[i])]
 
@@ -109,7 +109,7 @@ def make_mplots(mdf, limits, title, pstyle = 'ggplot'):
     axes[1].set_title("Temperature Profile")
 
     ## set fig size and save
-    print('...complete.')
+    print('...complete.\n')
     fig.subplots_adjust(top=0.90, bottom=0.11, left=0.06, right=0.90, hspace=0.33)
     plt.savefig('!output//' + title + ' - temporal plot.png', dpi = 400)
 
@@ -141,7 +141,6 @@ def plot_current_select(folder, b_nums, pstyle='ggplot'):
 
 def single_mode_hist(df, mask, limits, temp, title, directory, pstyle='ggplot'):
     ## allocate data
-    # print('IN SINGLE MODE HIST FUNCTION')
     bnums = get_bnums(df)  ## get boards present in mask dframe
     b_start = int(bnums[0][-1])  ## retrieve lowest test station board number
     on_off_dict = dict(zip(bnums, mask))
@@ -152,6 +151,9 @@ def single_mode_hist(df, mask, limits, temp, title, directory, pstyle='ggplot'):
         real_line = limits.boards_dict[board]
     else:
         real_line = ""
+
+    print('\t=>Histogram:', str(temp)+'C', str(real_line)+'...')
+
     temp_header = 'Amb Temp TC1 ' + board
     tolerance = TEMPERATURE_TOLERANCE ## temperature tolerance
     vsetpoint = 'VSetpoint ' + board
@@ -199,6 +201,7 @@ def single_mode_hist(df, mask, limits, temp, title, directory, pstyle='ggplot'):
     plt.tight_layout()
     plt.subplots_adjust(top=0.87, bottom=0.05, left=0.07, right=0.97)
     plt.savefig(directory + 'Hist ' + title + ' ' + plot_title + '.png', dpi = 400)
+    print('\tcomplete.\n')
 
 def multi_mode_hist(data_dict, mask, limits, temp, title, directory, pstyle='ggplot'):
     # print('IN MULTIMODE HIST FUNCTION')
@@ -218,6 +221,7 @@ def multi_mode_hist(data_dict, mask, limits, temp, title, directory, pstyle='ggp
         real_lines = "+".join(lines)
     else:
         real_lines = ""
+    print('\t=>Histogram:', str(temp)+'C', str(real_lines)+'...')
 
     ## create multimode current columns -- NEED FOR MULTIMODE ANALYSIS
     for sys in systems_only:
@@ -273,6 +277,7 @@ def multi_mode_hist(data_dict, mask, limits, temp, title, directory, pstyle='ggp
     plt.tight_layout()
     plt.subplots_adjust(top=0.87, bottom=0.05, left=0.07, right=0.97)
     plt.savefig(directory + 'Hist ' + title + ' ' + plot_title + '.png', dpi = 400)
+    print('\tcomplete.\n')
 
 def histograms(data_dict, limits, outage, temp, title):
     ''' Function to be used with GUI '''

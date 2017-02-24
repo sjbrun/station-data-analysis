@@ -59,6 +59,13 @@ def write_single_stats(filenames, wb, ws, row_start, test_title, df, mask, limit
     for voltage in voltages:
         ## set data to analyze
         dframe = volt_dict[voltage]
+        ## check if any data in df
+        if dframe.empty:
+            print('\n')
+            seq = [str(temp)+u'\N{DEGREE SIGN}C', str(voltage)+'V', str(mode)+'. ']
+            msg = '\nHung up at ' + ' '.join(seq) + \
+                  'There is no data for the selected temperature.'
+            raise Exception(msg)
         ## set current limits
         LL, UL = limits.lim[temp][mode][voltage][0], limits.lim[temp][mode][voltage][1]
         ## create count lists
@@ -277,6 +284,14 @@ def write_multi_stats(filenames, wb, ws, row_start, test_title, data_dict, mask,
     ## current/voltage/outage analysis for each voltage
     for voltage in voltages:
         dframe = volt_dict[voltage]
+        ## check if any data in df
+        if dframe.empty:
+            print('\n')
+            seq = [str(temp)+u'\N{DEGREE SIGN}C', str(voltage)+'V', str(real_mode)+'. ']
+            msg = '\nHung up at ' + ' '.join(seq) + \
+                  'There is no data for the selected temperature.'
+            raise Exception(msg)
+        ## set limits and empty stat arrays
         LL, UL = limits.lim[temp][mode][voltage][0], limits.lim[temp][mode][voltage][1]
         count = []
         stat_data = [['TP:'],['MIN:'],['MAX:'],['AVG:'],['Count:'],['Out of Spec:']]
@@ -402,9 +417,9 @@ def write_full_module_stats(filenames, wb, ws, test_title, data_dict, limits, ou
     row_start = 0  ## where to start writing in excel tables file
     for mask in sort_masks(list(data_dict.keys()), outage):
         if outage:  ## outage ON
-            if (mask.count('1') == 1) or ( outage and (mask.count('1') == 2) and mask[-1] == '1' ):
+            if (mask.count('1') == 1) or (outage and (mask.count('1') == 2) and mask[-1] == '1'):
                 row = write_single_stats(filenames, wb, ws, row_start, test_title, data_dict[mask], mask, limits, outage, temp)
-            elif (mask.count('1') > 2) or ( outage and (mask.count('1') == 2) and mask[-1] == '0' ):
+            elif (mask.count('1') > 2) or (outage and (mask.count('1') == 2) and mask[-1] == '0'):
                 row = write_multi_stats(filenames, wb, ws, row_start, test_title, data_dict, mask, limits, outage, temp)
         else:  ## outage OFF
             if (mask.count('1') == 1):
@@ -419,21 +434,24 @@ def do_analysis(filename, folder, b_nums, limits, stats, plots, hists, *temps):
     ''' Do user input analysis: stats/tbls, plotting, histograms possible
         (e.g. - type in 135 to see boards 1, 3, and 5 '''
     output_path = '!output//'
-    filenames = [output_path + str(filename)+'-analysis.csv',
-             output_path + str(filename)+'-outofspec.txt', filename]
+    filenames = [output_path + str(filename) +'-analysis.csv',
+                 output_path + str(filename) +'-outofspec.txt',
+                 filename]
     b_nums= str(b_nums)
     boards = sorted(['B'+num for num in b_nums])
     mdf, test_title = build_select_df(folder, *boards)
     df_dict = make_modes(mdf)
 
     ## make txt file with all boards
-    mdf.to_csv(output_path + 'raw_data_all_boards.txt', header=mdf.columns, index=True, sep='\t', mode='a')
+    mdf.to_csv(output_path + 'raw_data_all_boards.txt', header=mdf.columns,
+               index=True, sep='\t', mode='a')
 
     ## user-selected analysis
     outage = False
     if 'B6' in boards:
         outage = True
     if stats: ## stats/tables and essential plotting
+        print('Starting statistical analysis...\n')
         wb = create_excel_file(filename + ' - tables')
         for temp in temps:
             sheetname = str(temp) + 'C'
@@ -441,12 +459,14 @@ def do_analysis(filename, folder, b_nums, limits, stats, plots, hists, *temps):
             write_full_module_stats(filenames, wb, ws, test_title, df_dict, limits, outage, temp)
             highlight_workbook(wb, ws)
         wb.close()
-        print('\n\n***************STATISTICAL ANALYSIS COMPLETE***************\n')
+        print('\n\n====>Statistical analysis complete\n')
     if (plots or hists):
         plt.ion()  ## interactive plotting mode
         if plots: ## essential voltage and current plots
             make_mplots(mdf, limits, filename)
         if hists: ## plot histograms if desired
+            print('Plotting histograms:\n')
             for temp in temps:
                 histograms(df_dict, limits, outage, temp, filename)
+        print('\nAll analysis complete.')
         plt.show('hold') ## wait until all plots are built to show them

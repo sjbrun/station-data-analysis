@@ -28,17 +28,24 @@ def alter_file(filename):
 parse = lambda x: pd.datetime.strptime(x, '%m/%d/%Y %I:%M:%S %p')  ## parsing function for datetime dataframes
 
 ###### BUILDING BOARDS, MODES AS DATAFRAMES ######
-### =>TODO: logic to prevent exit/hang-up if raw data csv files are empty (headers only)
 def build_dataframe(board, folder, rename=False):
     ''' Builds dataframe for specified board in specified folder '''
-    print('Building '+board+' dataframe...', end='')
+    print('Building '+board+' dataframe...')
     df = pd.DataFrame()
     for filename in os.listdir(folder):
         if bool(re.search(REGEX_BOARDFILE(board), filename)):
             # alter_file(folder+'\\'+filename)
-            new_df = pd.read_csv(folder+'\\'+filename, parse_dates={'Date Time': [0,1]}, date_parser=parse,
-                                 index_col='Date Time', sep='\t', skipfooter=1, engine='python',
-                                 usecols=range(22))
+            try:
+                new_df = pd.read_csv(folder+'\\'+filename, parse_dates={'Date Time': [0,1]},
+                                    date_parser=parse, index_col='Date Time', sep='\t',
+                                    skipfooter=1, engine='python', usecols=range(22))
+                # if len(new_df.index) < 3:  ## ensure that dfs made from files actually have data
+                #     raise Exception('Error: Test station ' + board + ' did not record any data. ' \
+                #                     'For analysis, make sure the selected files have data.')
+            except Exception:
+                print('The following error occurred while attempting to convert the ' \
+                      'data files to pandas dataframes:\n\n')
+                raise
             df = df.append(new_df)
     for col in df.columns.copy():
         if re.search('^TP[0-9]*:\s$', col):
@@ -54,7 +61,7 @@ def build_dataframe(board, folder, rename=False):
         df = df.astype(float)
     except TypeError as e:
         print(e)
-    print('complete.')
+    print('complete.\n')
     return df
 
 def build_select_df(folder, *boards):
@@ -65,7 +72,6 @@ def build_select_df(folder, *boards):
     with open(first_filepath) as f:
         name_line = f.readlines()[3]
         if 'Test Name' in name_line:
-            #title = re.match(r'^Test Name: (.*)\.', name_line).group(0)
             title = re.findall(r'^Test Name:\s(.*)\.', name_line)[0]
         else:
             title = ''
@@ -120,14 +126,14 @@ def add_dfs(df1, df2, m1, m2, only_on = False):
 def make_modes(df):
     ''' Outputs dictionary of ON time mask modes dataframes. This includes
         all boards in df (even off ones, outage included). '''
-    print('Creating dictionary of modes dataframes...')
+    print('Creating dictionary of mode dataframes...')
     boards_present = []
     for board in ['B1','B2','B3','B4','B5','B6']:
         if any(board in col for col in df.columns):
             boards_present.append(board)
     col = 'Board on/off '  # whitespace char is there on purpose
     masks = [''.join(seq) for seq in itertools.product('01', repeat=len(boards_present))]  ## list of all combinations on/off
-    print("\t=> Possible board combinations: ", masks)
+    print('\t=> Possible board combinations: ', masks)
     data_dict = {}  ## holds df for each data mask
     for mask in masks:  ## retrieve only excited modes
         float_mask = [float(digit) for digit in mask]  ## float type to compare with df board on/off col
@@ -141,7 +147,7 @@ def make_modes(df):
         data_dict[mask] = data  ## save mode data in dictionary with mask (mode) keys
         if data_dict[mask].empty:
             del(data_dict[mask])  ## delete data from dict if mode (mask) df is empty
-    print("\t=> Board combos actually present: ", sorted(data_dict.keys()))
+    print('\t=> Board combos actually present: ', sorted(data_dict.keys()))
     return data_dict
 
 def create_modes(folder, b_nums):
