@@ -1,0 +1,42 @@
+Test Station SN: 6
+Product: P552 MCA PV C-sample
+Software Version:  2.1.13
+Test Name: P552 MCA PV Tri Temp FT.xlsx
+SN 1: System 82
+SN 2: System 83
+SN 3: System 84
+SN 4: System 85
+SN 5: System 86
+SN 6: System 87
+SN 7: System 88
+SN 8: System 89
+SN 9: System 90
+SN 10: System 91
+SN 11: System 92
+SN 12: System 93
+
+2/6/2017	5:32:17 PM	Started Test
+2/6/2017	5:50:00 PM	Stop from Test Duration Complete    Test Duration:  00:17:43
+Number of Test Cycles Completed 4
+
+Run Times	Check Fuse	NA	NA	PARK	DRL	TURN	Outage
+1: 00:17:43	0	0	0	17	17	25	0
+2: 00:17:43	0	0	0	17	21	16	0
+3: 00:17:43	0	0	0	17	17	25	0
+4: 00:17:43	0	0	0	17	17	21	0
+5: 00:17:43	0	0	0	17	17	25	0
+6: 00:17:43	0	0	0	17	21	16	0
+7: 00:17:43	0	0	0	17	17	25	0
+8: 00:17:43	0	0	0	17	17	16	0
+9: 00:17:43	0	0	0	17	17	25	0
+10: 00:17:43	0	0	0	17	21	16	0
+11: 00:17:43	0	0	0	17	17	25	0
+12: 00:17:43	0	0	0	17	17	16	0
+
+Board	Volt Check
+NA	0
+NA	0
+PARK	0
+DRL	0
+TURN	0
+

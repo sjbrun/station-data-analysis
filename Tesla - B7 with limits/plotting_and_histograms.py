@@ -165,7 +165,8 @@ def make_hist(df, board, limits, temp, title, directory, pstyle='ggplot'):
     style.use(pstyle)
     plot_title = str(real_line) + ' ' + str(temp) + u'\N{DEGREE SIGN}' + 'C'
     fig.suptitle(title + ': ' + plot_title, fontsize = 14, fontweight='bold')
-    plt.figtext(0.5, .935, 'Note: black line is sample mean, red dashed lines are lower/upper current limits, and blue dotted lines are \u00b110\u0025 of the mean', style='italic', fontsize=8, ha = 'center', va = 'top')
+    plt.figtext(0.5, .935, 'Note: black line is sample mean, red dashed lines are lower/upper current limits, ' + 
+            'and blue dotted lines are \u00b110\u0025 of the mean', style='italic', fontsize=8, ha = 'center', va = 'top')
     nrows, ncols = len(voltages), 1
     i = 1
 
