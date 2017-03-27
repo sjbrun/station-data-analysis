@@ -7,12 +7,15 @@ it is extremely useful format for conducting this type of large data size analys
 
 
 from regular_expressions_and_globals import *
+from histograms import *
 import itertools
 import pandas as pd
 import os
 from datetime import datetime
 
+
 DATE_PARSER = lambda x: pd.datetime.strptime(x, '%m/%d/%Y %I:%M:%S %p')  ## parsing function for datetime dataframes
+
 
 class Sample(object):
     ''' This class may be useful... not sure yet '''
@@ -26,16 +29,17 @@ class Board(object):
     amb_temp = 'Amb Temp TC1'
     vsetpoint = 'VSetpoint'
 
-    def __init__(self, board_number, folder):
+    def __init__(self, test, board_number):
+        self.test = test
         self.id = ''
-        self.folder = folder
+        self.folder = test.folder
         self.files = []
         self.df = pd.DataFrame()
         self.systems = []
         self.thermocouples = []
         self.outage = False
         self.module = 'Not yet pulled from limits file'  # e.g. - 'DRL'
-        # self.samples = []
+        self.samples = []
         
         self.__set_bnum(board_number)
         self.__set_outage()
@@ -44,7 +48,7 @@ class Board(object):
         self.__scan_for_systems()
         self.__scan_for_voltage_senses()
         self.__scan_for_thermocouples()
-        # self.__create_samples()
+        self.__create_samples()
 
     def __set_bnum(self, board_number):
         if type(board_number) == int:
@@ -103,23 +107,92 @@ class Board(object):
     def __create_samples(self):
         ''' Creates a sample object for each system on the board '''
         for system in self.systems:
-            self.samples.append(Sample(system, self.id))
+            self.samples.append(Sample(system, self))
 
 
-class ModeStat(object):
+class Mode(object):
     ''' This class may be useful, not sure yet '''
-    def __init__(self, mode, df, voltages):
-        self.mode = mode
-        self.voltages = voltages
 
+    amb_temp = 'Amb Temp TC1'
+    vsetpoint = 'VSetpoint'
+
+    def __init__(self, test, board_mode, df, voltages, *temps):
+        self.test = test
+        self.board_mode = board_mode
+        self.mode_tag = board_mode.replace('B6', '')
+        self.temps = temps
+        self.voltages = voltages
+        self.board_ids = re.findall('..', board_mode) # split string every 2 chars
+        self.systems = [' '.join([sys, mode_tag]) for sys in test.systems]
+        self.hist_dict = {}  # temp -> voltage -> df of just currents at that temp/voltage combo
+        self.multimode = False  # placeholder -> scans later to see if multimode or not
+        
+        self.__scan_for_multimode()
+        self.__make_hist_dict()
+        self.__populate_hist_dict(df)
+
+    def __scan_for_multimode(self):
+        boards = self.board_ids.copy()
+        boards = remove_b6_from(boards)
+        if len(boards) > 1:
+            self.multimode = True     
+
+    def __make_hist_dict(self):
+        empty_hist_dict = dict.fromkeys(self.voltages)
+        for temp in self.temps:
+            self.hist_dict[temp] = empty_hist_dict.copy()
+
+#### IN WORK HEREEE
+
+    def __populate_hist_dict(self, df):    
+        for temp in self.temps:
+            for voltage in self.voltages:
+                dframe = df.loc[(df[self.vsetpoint] == voltage) &
+                                (df[self.amb_temp] > (temp-TEMPERATURE_TOLERANCE)) &
+                                (df[self.amb_temp] < (temp+TEMPERATURE_TOLERANCE))]
+                
+
+
+                for sys in self.systems:  ## strip off index --> create pool of currents for hist
+                    dframe = pd.concat([ pd.DataFrame(), dframe[sys] ], ignore_index=True)
+                self.hist_dict[temp][voltage] = dframe
+
+def filter_temp_voltage_df(test, temp, voltage, df, mode):
+    dframe = df.loc[(df[mode.vsetpoint] == voltage) &
+                    (df[mode.amb_temp] > (temp-TEMPERATURE_TOLERANCE)) &
+                    (df[mode.amb_temp] < (temp+TEMPERATURE_TOLERANCE))]    
+    return dframe
+
+def create_multimode_cols(mode):
+    if mode.multimode:
+        for sys in test.systems:
+            dframe[sys + ' ' + mode.mode_tag] = 0
+            for b in remove_b6_from(boards):
+                dframe[sys+mode_tag] = dframe[sys+mode_tag] + dframe[sys+b]
+
+
+
+    for sys in mode.systems:  ## strip off index --> create pool of currents for hist
+        dframe = pd.concat([ pd.DataFrame(), dframe[sys] ], ignore_index=True)
+    self.hist_dict[temp][voltage] = dframe
+
+def remove_b6_from(a_list):
+    try:
+        a_list.remove('B6')  # remove outage
+    except ValueError:
+        pass  # do nothing
+    return a_list    
+
+###### END OF IN WORK SECTION
 
 class TestStation(object):
     ''' blah blah blah '''
 
-    def __init__(self, boards, folder):
+    def __init__(self, boards, folder, *temps):
         self.folder = folder
         self.systems = []
         self.voltages = []
+        self.temps = temps
         self.vsetpoint = 'VSetpoint'
         self.voltage_senses = []
         self.thermocouples = []
@@ -132,8 +205,10 @@ class TestStation(object):
         self.b4 = 'Not Used'       
         self.b5 = 'Not Used'
         self.b6 = 'Not Used'
-        self.mdf = pd.DataFrame()
-        self.mode_df_dict = {}  ## holds mode_df for each data mask
+        self.mdf = pd.DataFrame() # 'mother' dataframe holds all measured data
+        self.mode_df_dict = {}  # holds mode_df for each data mask
+        self.modes = []
+        self.mode_stats = []
 
         self.__create_boards(boards)
         self.__set_on_boards()
@@ -143,24 +218,25 @@ class TestStation(object):
         self.__set_thermocouples()
         self.__build_test_station_dataframe()
         self.__scan_for_vsetpoints()
-        self.__make_modes()
+        self.__make_df_dict()
+        self.__make_mode_stats()
 
     def __create_boards(self, boards):
         ''' Creates board dataframes for each board passed into TestStation init '''
         boards = str(boards)  ## e.g. - boards: 123456 or 3456, etc
         for board in boards:
             if '1' in board:
-                self.b1 = Board(board, self.folder)
+                self.b1 = Board(self, board)
             elif '2' in board:
-                self.b2 = Board(board, self.folder)
+                self.b2 = Board(self, board)
             elif '3' in board:
-                self.b3 = Board(board, self.folder)
+                self.b3 = Board(self, board)
             elif '4' in board:
-                self.b4 = Board(board, self.folder)
+                self.b4 = Board(self, board)
             elif '5' in board:
-                self.b5 = Board(board, self.folder)
+                self.b5 = Board(self, board)
             elif '6' in board:
-                self.b6 = Board(board, self.folder)
+                self.b6 = Board(self, board)
 
     def __set_on_boards(self):
         ''' Appends all test boards that were used to boards list '''
@@ -197,25 +273,32 @@ class TestStation(object):
     def __scan_for_vsetpoints(self):
         self.voltages = sorted(set(self.mdf[self.vsetpoint]))
 
-    def __make_modes(self):
+    def __make_df_dict(self):
         ''' Outputs dictionary of ON time mask modes dataframes. This includes
             all boards in df (even off ones, outage included). '''
         masks = [''.join(seq) for seq in itertools.product('01', repeat=len(self.boards))]  ## list of all combinations on/off
-        print('\t=> Possible board combinations: ', masks)
-        
+        ## print('\t=> Possible board combinations: ', masks)
         for mask in masks:  ## retrieve only excited modes
+            if '1' not in mask:
+                continue
+            mode = mask_to_mode(mask, self.board_ids)
             float_mask = [float(digit) for digit in mask]  ## float type to compare with df board on/off col
-            data = self.mdf.copy()
+            data = self.mdf.copy() ## make copy of 'mother' dataframe
             ## for each specific mode (mask), join together all board dfs that are ON in mask
             i = 0
             for i in range(len(mask)):
                 board, on_off_state = self.boards[i].id, float_mask[i]
                 data = data.loc[(self.mdf[ON_OFF+' '+board] == on_off_state)]
                 i += 1
-            self.mode_df_dict[mask] = data  ## save mode data in dictionary with mask (mode) keys
-            if self.mode_df_dict[mask].empty:
-                del(self.mode_df_dict[mask])  ## delete data from dict if mode (mask) df is empty
-        print('\t=> Board combos actually present: ', sorted(self.mode_df_dict.keys()))
+            self.mode_df_dict[mode] = data  ## save mode data in dictionary with mask (mode) keys
+            if self.mode_df_dict[mode].empty:
+                del(self.mode_df_dict[mode])  ## delete data from dict if mode (mask) df is empty
+        self.modes = list(self.mode_df_dict.keys())
+        print('\n=> Board combos present: ', self.modes)
+
+    def __make_mode_stats(self):
+        for mode in self.modes:
+            self.mode_stats.append(Mode(self, mode, self.mode_df_dict[mode], self.voltages, *self.temps))
 
     def print_board_numbers(self):
         ''' Prints the ON boards used in test station for test '''
@@ -223,15 +306,29 @@ class TestStation(object):
             print(board.id)
 
 
-### helper function rename columns
+### ------- Helper Functions ------- ###
 def rename_columns(mdf, board, columns):
+    ''' This is a helper function that adds the board number to the labels of the
+    input columns. Used for creating 'mother' dataframe for TestStation object. '''
     for column_label in columns:
         mdf.rename(columns={column_label: column_label+' '+board.id}, inplace=True)
     return mdf
 
+def mask_to_mode(mask, board_ids):
+    mode = ''
+    i = 0
+    for binary_digit in mask:
+        if int(binary_digit):
+            mode += board_ids[i]
+        i += 1
+    return mode
 
+
+### ----------------- TESTING ---------------- ###
 
 FP = r"\\Chfile1\ecs_landrive\Automotive_Lighting\LED\P552 MCA Headlamp\P552 MCA Aux\ADVPR\PV Aux\TL A&B\Initial Tri Temp FT\-40C rerun\Raw Data"
-test = TestStation(3456, FP)
-
+test = TestStation(3456, FP, -40)
+m = test.mode_stats[0]
+v9 = m.hist_dict[-40][9.0]
+# system_histograms(test)
 
