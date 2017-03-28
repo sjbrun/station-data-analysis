@@ -70,7 +70,7 @@ class Board(object):
         for filename in os.listdir(self.folder):
             if bool(re.search(REGEX_BOARDFILE(self.id), filename)):
                 try:
-                    next_file_df = pd.read_csv(self.folder+'\\'+filename, parse_dates={'Date Time': [0,1]},
+                    next_file_df = pd.read_csv( self.folder+'\\'+filename, parse_dates={'Date Time': [0,1]},
                                         date_parser=DATE_PARSER, index_col='Date Time', sep='\t',
                                         skipfooter=1, engine='python', usecols=range(22))
                 except Exception:
@@ -123,18 +123,18 @@ class Mode(object):
         self.temps = temps
         self.voltages = voltages
         self.board_ids = re.findall('..', board_mode) # split string every 2 chars
-        self.systems = [' '.join([sys, mode_tag]) for sys in test.systems]
+        self.current_board_ids = copy_and_remove_b6_from(self.board_ids)
+        self.systems = [' '.join([sys, self.mode_tag]) for sys in test.systems]
         self.hist_dict = {}  # temp -> voltage -> df of just currents at that temp/voltage combo
         self.multimode = False  # placeholder -> scans later to see if multimode or not
+        self.mode_df = pd.DataFrame()
         
         self.__scan_for_multimode()
         self.__make_hist_dict()
         self.__populate_hist_dict(df)
 
     def __scan_for_multimode(self):
-        boards = self.board_ids.copy()
-        boards = remove_b6_from(boards)
-        if len(boards) > 1:
+        if len(self.current_board_ids) > 1:
             self.multimode = True     
 
     def __make_hist_dict(self):
@@ -142,48 +142,45 @@ class Mode(object):
         for temp in self.temps:
             self.hist_dict[temp] = empty_hist_dict.copy()
 
-#### IN WORK HEREEE
-
     def __populate_hist_dict(self, df):    
         for temp in self.temps:
             for voltage in self.voltages:
-                dframe = df.loc[(df[self.vsetpoint] == voltage) &
-                                (df[self.amb_temp] > (temp-TEMPERATURE_TOLERANCE)) &
-                                (df[self.amb_temp] < (temp+TEMPERATURE_TOLERANCE))]
-                
+                dframe = self.filter_temp_and_voltage(df, temp, voltage)
+                self.mode_df = self.create_multimode_cols(dframe)
+                dframe_for_hist = self.strip_index(self.mode_df)
+                self.hist_dict[temp][voltage] = dframe_for_hist
+
+    def filter_temp_and_voltage(self, df, temp, voltage):
+        dframe = df.loc[(df[self.vsetpoint] == voltage) &
+                        (df[self.amb_temp] > (temp-TEMPERATURE_TOLERANCE)) &
+                        (df[self.amb_temp] < (temp+TEMPERATURE_TOLERANCE))]
+        return dframe
+
+    def create_multimode_cols(self, dframe):
+        if self.multimode:  # if mode is a multimode (multiple current boards ON)
+            for sys in self.test.systems: # for each system (without appended board/mode tag label)
+                sys_col_label = sys + ' ' + self.mode_tag 
+                dframe[sys_col_label] = 0.0  # create multimode col of float zeroes
+                for b in self.current_board_ids: # add each ON current board
+                    dframe[sys_col_label] = dframe[sys_col_label] + pd.to_numeric(dframe[sys+' '+b], downcast='float')
+        return dframe
+
+    def strip_index(self, dframe):
+        hist_dframe = pd.melt(dframe, value_vars=self.systems, value_name='currents')
+        hist_dframe = pd.to_numeric(hist_dframe['currents'], downcast='float')
+        return hist_dframe
 
 
-                for sys in self.systems:  ## strip off index --> create pool of currents for hist
-                    dframe = pd.concat([ pd.DataFrame(), dframe[sys] ], ignore_index=True)
-                self.hist_dict[temp][voltage] = dframe
-
-def filter_temp_voltage_df(test, temp, voltage, df, mode):
-    dframe = df.loc[(df[mode.vsetpoint] == voltage) &
-                    (df[mode.amb_temp] > (temp-TEMPERATURE_TOLERANCE)) &
-                    (df[mode.amb_temp] < (temp+TEMPERATURE_TOLERANCE))]    
-    return dframe
-
-def create_multimode_cols(mode):
-    if mode.multimode:
-        for sys in test.systems:
-            dframe[sys + ' ' + mode.mode_tag] = 0
-            for b in remove_b6_from(boards):
-                dframe[sys+mode_tag] = dframe[sys+mode_tag] + dframe[sys+b]
-
-
-
-    for sys in mode.systems:  ## strip off index --> create pool of currents for hist
-        dframe = pd.concat([ pd.DataFrame(), dframe[sys] ], ignore_index=True)
-    self.hist_dict[temp][voltage] = dframe
-
-def remove_b6_from(a_list):
+## helper
+def copy_and_remove_b6_from(a_list):
+    b_list = a_list.copy()
     try:
-        a_list.remove('B6')  # remove outage
+        b_list.remove('B6')  # remove outage
     except ValueError:
         pass  # do nothing
-    return a_list    
+    return b_list    
 
-###### END OF IN WORK SECTION
+
 
 class TestStation(object):
     ''' blah blah blah '''
@@ -330,5 +327,5 @@ FP = r"\\Chfile1\ecs_landrive\Automotive_Lighting\LED\P552 MCA Headlamp\P552 MCA
 test = TestStation(3456, FP, -40)
 m = test.mode_stats[0]
 v9 = m.hist_dict[-40][9.0]
-# system_histograms(test)
+make_mode_histograms(test)
 
